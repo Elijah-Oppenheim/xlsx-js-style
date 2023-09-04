@@ -14774,11 +14774,14 @@ function parse_ws_xml_sheetviews(data, wb) {
 	});
 }
 function write_ws_xml_sheetviews(ws, opts, idx, wb) {
-  const { sheetProps = {} } = opts
-  var sview = ({workbookViewId:"0", ...sheetProps});
-  // $FlowIgnore
-  if((((wb||{}).Workbook||{}).Views||[])[0]) sview.rightToLeft = wb.Workbook.Views[0].RTL ? "1" : "0";
-  return writextag("sheetViews", writextag("sheetView", null, sview), {});
+	var sview = ({workbookViewId:"0"});
+	// $FlowIgnore
+	if((((wb||{}).Workbook||{}).Views||[])[0]) {
+		const { RTL, ShowGridLines } = wb.Workbook.Views[0];
+		sview.rightToLeft = RTL ? "1" : "0";
+		sview.showGridLines = ShowGridLines ? "1" : "0";
+	}
+	return writextag("sheetViews", writextag("sheetView", null, sview), {});
 }
 
 function write_ws_xml_cell(cell, ref, ws, opts) {
