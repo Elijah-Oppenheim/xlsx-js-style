@@ -10514,7 +10514,7 @@ function write_sty_xml(wb, opts) {
 	o[o.length] = ('<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>');
 	if((w = write_cellXfs(opts.cellXfs))) o[o.length] = (w);
 	o[o.length] = ('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
-	o[o.length] = ('<dxfs count="0"/>');
+	o[o.length] = ('<dxfs count="3"><dxf><font><color rgb="FF9C0006"/></font><fill><patternFill><bgColor rgb="FFFFC7CE"/></patternFill></fill></dxf><dxf><font><color rgb="FF9C5700"/></font><fill><patternFill><bgColor rgb="FFFFEB9C"/></patternFill></fill></dxf><dxf><font><color rgb="FF006100"/></font><fill><patternFill><bgColor rgb="FFC6EFCE"/></patternFill></fill></dxf></dxfs>');
 	o[o.length] = ('<tableStyles count="0" defaultTableStyle="TableStyleMedium9" defaultPivotStyle="PivotStyleMedium4"/>');
 
 	if(o.length>2){ o[o.length] = ('</styleSheet>'); o[1]=o[1].replace("/>",">"); }
@@ -14672,6 +14672,21 @@ function write_ws_xml_protection(sp) {
 	return writextag('sheetProtection', null, o);
 }
 
+function write_ws_xml_conditional(cd) {
+ for(var i = 0; i != cd.length; ++i) {
+	 const { range, rules } = cd[i]
+	 var o = '<conditionalFormatting sqref="' + range + '">';
+	 for (var j = 0; j != rules.length; ++j) {
+		 const { dxfId = 1, formula, operator = "greaterThan", priority = 1, type = "cellIs" } = rules[j]
+		 o += '<cfRule type="' + type + '" dxfId="' + dxfId + '" priority="' + priority + '" operator="' + operator + '">';
+  	 if(formula) o += '<formula>' + formula + '</formula>'
+		 o += '</cfRule>';
+	 }
+	 o += '</conditionalFormatting>';
+ }
+ return o;
+}
+
 function parse_ws_xml_hlinks(s, data, rels) {
 	var dense = Array.isArray(s);
 	for(var i = 0; i != data.length; ++i) {
@@ -15123,6 +15138,8 @@ function write_ws_xml(idx, opts, wb, rels) {
 
 	/* phoneticPr */
 	/* conditionalFormatting */
+	if(ws['!conditional']) o[o.length] = write_ws_xml_conditional(ws['!conditional']);
+
 	/* dataValidations */
 
 	var relc = -1, rel, rId = -1;
@@ -24698,7 +24715,20 @@ var XmlNode = (function () {
 
 			this.$cellXfs = XmlNode("cellXfs").attr("count", 0);
 			this.$cellStyles = XmlNode("cellStyles").append(XmlNode("cellStyle").attr("name", "Normal").attr("xfId", 0).attr("builtinId", 0));
-			this.$dxfs = XmlNode("dxfs").attr("count", "0");
+			this.$dxfs = XmlNode("dxfs", null, [
+				XmlNode("dxf", null, [
+					XmlNode("font", null, [XmlNode("color").attr("rgb", "FF9C0006")]),
+					XmlNode("fill", null, [XmlNode("patternFill", null, [XmlNode("bgColor").attr("rgb", "FFFFC7CE")])]),
+				]),
+				XmlNode("dxf", null, [
+					XmlNode("font", null, [XmlNode("color").attr("rgb", "FF9C5700")]),
+					XmlNode("fill", null, [XmlNode("patternFill", null, [XmlNode("bgColor").attr("rgb", "FFFFEB9C")])]),
+				]),
+				XmlNode("dxf", null, [
+					XmlNode("font", null, [XmlNode("color").attr("rgb", "FF006100")]),
+					XmlNode("fill", null, [XmlNode("patternFill", null, [XmlNode("bgColor").attr("rgb", "FFC6EFCE")])]),
+				]),
+			]).attr("count", "3");
 			this.$tableStyles = XmlNode("tableStyles").attr("count", "0").attr("defaultTableStyle", "TableStyleMedium9").attr("defaultPivotStyle", "PivotStyleMedium4");
 
 			this.$styles = XmlNode("styleSheet")
